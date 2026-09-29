@@ -131,29 +131,54 @@ with bar:
     jalankan = b4.button('Jalankan prediksi', type='primary', use_container_width=True)
 
 if jalankan or 'hasil' not in st.session_state:
-    df_valid, galat, peringatan = validasi_riwayat(df_edit, META)
-    if galat or df_valid is None:
-        st.session_state['hasil'] = None
+    with pesan:
+        proses = st.status('Prediksi sedang berjalan...', expanded=False)
+    with proses:
+        st.write('Memvalidasi tabel riwayat...')
+        df_valid, galat, peringatan = validasi_riwayat(df_edit, META)
+        galat = list(galat or [])
+        if not galat and df_valid is None:
+            galat = ['Data riwayat tidak dapat diproses.']
+        hasil_baru = None
+        if not galat:
+            st.write(f'Menjalankan prakiraan untuk {len(df_valid)} observasi riwayat...')
+            try:
+                hasil_baru = {'riwayat': df_valid, 'fc': jalankan_forecast(MODEL, df_valid, META)}
+            except Exception as e:
+                galat.append(f'Model gagal menghasilkan prakiraan: {type(e).__name__}: {e}')
+    if galat:
+        proses.update(label=f'Prediksi gagal ({len(galat)} masalah ditemukan)', state='error', expanded=False)
+        st.toast('Prediksi gagal. Lihat penyebabnya di bawah tombol.', icon=':material/error:')
     else:
-        st.session_state['hasil'] = {'riwayat': df_valid, 'fc': jalankan_forecast(MODEL, df_valid, META)}
+        n_fc = len(hasil_baru['fc'])
+        proses.update(label=f'Prediksi selesai: {n_fc} langkah prakiraan dihasilkan', state='complete', expanded=False)
+        if jalankan:
+            st.toast('Prediksi selesai.', icon=':material/check_circle:')
+    st.session_state['hasil'] = hasil_baru
     st.session_state['galat'] = galat
     st.session_state['peringatan'] = peringatan
     st.session_state['tanda'] = tanda
+    st.session_state['status_terakhir'] = 'gagal' if galat else 'selesai'
 
 with pesan:
-    for g in st.session_state.get('galat', []):
-        html(f'<div class="catatan err">{g}</div>')
+    galat_ada = st.session_state.get('galat', [])
+    if galat_ada:
+        daftar = ''.join(f'<li>{g}</li>' for g in galat_ada)
+        html(f'<div class="catatan err"><b>Prediksi gagal.</b> Penyebab:<ul class="daftar-galat">{daftar}</ul></div>')
+    elif not jalankan and st.session_state.get('status_terakhir') == 'selesai':
+        html('<div class="catatan">Menampilkan hasil prediksi terakhir.</div>')
     for p in st.session_state.get('peringatan', []):
-        html(f'<div class="catatan warn">{p}</div>')
+        html(f'<div class="catatan warn"><b>Peringatan:</b> {p}</div>')
     if st.session_state.get('tanda') != tanda:
-        html('<div class="catatan">Tabel riwayat berubah. Tekan <b>Jalankan prediksi</b> untuk memperbarui hasil.</div>')
+        html('<div class="catatan warn">Tabel riwayat berubah sejak prediksi terakhir. Tekan <b>Jalankan prediksi</b> '
+             'untuk memperbarui hasil.</div>')
 
 hasil = st.session_state.get('hasil')
 
 if not hasil:
     with tab_hasil:
         html(f'''<div class="kosong">{IKON_INFO}<div><b>Belum ada hasil.</b><br>
-Buka tab Data riwayat, isi atau unggah minimal {META["min_baris_riwayat"]} observasi, lalu tekan Jalankan prediksi.</div></div>''')
+Prediksi belum berhasil dijalankan. Periksa penyebabnya di atas, lalu buka tab Data riwayat, isi atau unggah minimal {META["min_baris_riwayat"]} observasi, lalu tekan Jalankan prediksi.</div></div>''')
     st.stop()
 
 with tab_hasil:
