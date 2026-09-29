@@ -72,3 +72,10 @@ h3,.m h3{font-size:13px!important;font-weight:500!important;margin:0 0 6px!impor
 
 @media(max-width:900px){.block-container,[data-testid="stMainBlockContainer"]{padding:24px 16px!important}.metrics,.info-grid{grid-template-columns:1fr}.top{flex-direction:column;align-items:flex-start;gap:12px}}
 [data-testid="stMarkdownContainer"] .catatan,[data-testid="stMarkdownContainer"] p.catatan{font-size:12px!important;line-height:1.5}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px}
+.stat span{display:block;font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.08em}
+.stat b{font-family:Georgia,serif;font-weight:400;font-size:22px;color:var(--tx);font-variant-numeric:tabular-nums}
+.stat+div,.stButton button[kind="primary"]{margin-top:0!important}
+[data-testid="stTabs"] [data-baseweb="tab-list"]{gap:24px;border-bottom:1px solid var(--line);margin:14px 0 18px}
+[data-testid="stTabs"] [data-baseweb="tab"] p{font-size:14px}
+[data-testid="stTabs"] [data-baseweb="tab-highlight"]{background:var(--acc)}
